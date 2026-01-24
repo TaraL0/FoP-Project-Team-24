@@ -7,12 +7,15 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL2_gfx.h>
+#include <SDL2/SDL_mixer.h>
 
 struct Sprite
 {
     SDL_Texture *m_img = nullptr;
     SDL_Rect img_rect;
     SDL_Rect img_src;
+    Mix_Chunk *m_sound = nullptr;
+    int vol = 128;
     int direction;
     bool visible;
     int w, h;

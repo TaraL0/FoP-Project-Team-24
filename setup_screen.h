@@ -27,4 +27,6 @@ SDL_RenderClear (m_renderer);
 // Show the window
 SDL_RenderPresent (m_renderer);
 
+Mix_OpenAudio (44100, MIX_DEFAULT_FORMAT, 2, 2048);
+
 #endif //SETUP_SCREEN_H

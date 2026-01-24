@@ -10,19 +10,29 @@ int main (int argc, char *argv[])
     Sprite sprite;
     sprite.m_img = IMG_LoadTexture (m_renderer, "scratch_cat.png");
     sprite.draw (m_renderer);
+    sprite.m_sound = Mix_LoadWAV ("Meow.wav");
+
+    // SDL_Delay (3000);
+    // moveSteps (sprite, 10, m_renderer);
+    // SDL_Delay (1000);
+    // turnRight (sprite, 90, m_renderer);
+    // SDL_Delay (1000);
+    // turnLeft (sprite, 180, m_renderer);
+    // SDL_Delay (1000);
+    // goToCoords (sprite, 700, 300, m_renderer);
+    // SDL_Delay (1000);
+    // changeCoordsBy (sprite, 100, 100, m_renderer);
+    // SDL_Delay (1000);
+    // pointInDirection (sprite, -90, m_renderer);
 
     SDL_Delay (3000);
-    moveSteps (sprite, 10, m_renderer);
-    SDL_Delay (1000);
-    turnRight (sprite, 90, m_renderer);
-    SDL_Delay (1000);
-    turnLeft (sprite, 180, m_renderer);
-    SDL_Delay (1000);
-    goToCoords (sprite, 700, 300, m_renderer);
-    SDL_Delay (1000);
-    changeCoordsBy (sprite, 100, 100, m_renderer);
-    SDL_Delay (1000);
-    pointInDirection (sprite, -90, m_renderer);
+    //startSound (sprite);
+    //startSound (sprite);
+    // setSoundVolume (sprite, 64);
+    // playSoundUntilDone (sprite);
+    // changeSoundVolume (sprite, -64);
+    // playSoundUntilDone (sprite);
+
 
     vector <SDL_Event> events;
     bool quit = false;

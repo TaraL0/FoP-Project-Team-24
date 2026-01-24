@@ -2,12 +2,32 @@
 #ifndef SOUND_BLOCK_H
 #define SOUND_BLOCK_H
 
-#include <bits/stdc++.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL2_gfx.h>
+void startSound (Sprite &sprite)
+{
+    Mix_PlayChannel (-1, sprite.m_sound, 0);
+}
 
-using namespace std;
+void playSoundUntilDone (Sprite &sprite)
+{
+    int channel = Mix_PlayChannel (0, sprite.m_sound, 0);
+    while (Mix_Playing (channel)) {continue;}
+}
+
+void StopSound (Sprite &sprite)
+{
+    Mix_HaltChannel (-1);
+}
+
+void setSoundVolume (Sprite &sprite, int n)
+{
+    sprite.vol = n;
+    Mix_Volume (-1, sprite.vol);
+}
+
+void changeSoundVolume (Sprite &sprite, int n)
+{
+    sprite.vol += n;
+    Mix_Volume (-1, sprite.vol);
+}
 
 #endif //SOUND_BLOCK_H

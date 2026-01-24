@@ -7,4 +7,7 @@ add_executable(P1 main.cpp
         motion_block.h
         looks_block.h
         sound_block.h
-        sprite.h)
+        sprite.h
+        setup_screen.h)
+
+target_link_libraries (${PROJECT_NAME} -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer)
