@@ -9,6 +9,15 @@
 #include <SDL2/SDL2_gfx.h>
 #include <SDL2/SDL_mixer.h>
 
+using namespace std;
+
+struct Stage
+{
+    vector <string> backdropsName;
+    vector <SDL_Texture*> backdrops;
+    int curBackdropNum;
+};
+
 struct Sprite
 {
     SDL_Texture *m_img = nullptr;
@@ -20,13 +29,18 @@ struct Sprite
     bool visible;
     int w, h;
     double angle = 0.0;
+    vector <string> costumesName;
+    vector <SDL_Texture*> costumes;
+    int curCostumeNum;
+    double scale = 1.0;
+    int a = 255;
     void draw (SDL_Renderer* m_renderer)
     {
         SDL_QueryTexture (m_img, NULL, NULL, &w, &h);
-        img_rect.x = 400;
-        img_rect.y = 200;
-        img_rect.w = w;
-        img_rect.h = h;
+        img_rect.x = 1180 - w / 6;
+        img_rect.y = 360 - h / 6;
+        img_rect.w = w / 3;
+        img_rect.h = h / 3;
         img_src.x = 0;
         img_src.y = 0;
         img_src.w = w / 1;
