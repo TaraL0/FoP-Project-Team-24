@@ -20,25 +20,29 @@ struct Stage
 
 struct Sprite
 {
+    string mainName;
     SDL_Texture *m_img = nullptr;
     SDL_Rect img_rect;
     SDL_Rect img_src;
     Mix_Chunk *m_sound = nullptr;
     int vol = 128;
-    int direction;
-    bool visible;
+    bool visible = true;
     int w, h;
-    double angle = 0.0;
+    int x, y;
+    double direction = 0.0;
     vector <string> costumesName;
     vector <SDL_Texture*> costumes;
     int curCostumeNum;
-    double scale = 1.0;
+    double scale = 100;
     int a = 255;
+    int layer = 0;
+
     void draw (SDL_Renderer* m_renderer)
     {
+        if (!visible) {return;}
         SDL_QueryTexture (m_img, NULL, NULL, &w, &h);
-        img_rect.x = 1180 - w / 6;
-        img_rect.y = 360 - h / 6;
+        img_rect.x = x - w / 6;
+        img_rect.y = y - h / 6;
         img_rect.w = w / 3;
         img_rect.h = h / 3;
         img_src.x = 0;
@@ -47,7 +51,6 @@ struct Sprite
         img_src.h = h / 1;
         // copy the texture to the rendering context
         SDL_RenderCopy (m_renderer, m_img, &img_src, &img_rect);
-        SDL_RenderPresent (m_renderer);
     }
 };
 
