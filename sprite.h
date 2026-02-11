@@ -15,42 +15,59 @@ struct Stage
 {
     vector <string> backdropsName;
     vector <SDL_Texture*> backdrops;
+    SDL_Rect img_src;
     int curBackdropNum;
+
+    void draw (SDL_Renderer* m_renderer, SDL_Rect mainStage)
+    {
+        if (backdrops.empty ()) return;;
+        SDL_RenderCopy (m_renderer, backdrops [curBackdropNum], nullptr, &mainStage);
+    }
 };
 
 struct Sprite
 {
     string mainName;
-    SDL_Texture *m_img = nullptr;
     SDL_Rect img_rect;
-    SDL_Rect img_src;
     Mix_Chunk *m_sound = nullptr;
-    int vol = 128;
+    double vol = 128.0;
     bool visible = true;
-    int w, h;
     int x, y;
     double direction = 0.0;
     vector <string> costumesName;
     vector <SDL_Texture*> costumes;
-    int curCostumeNum;
+    vector <int> costumesWidth;
+    vector <int> costumesHeight;
+    int curCostumeNum = 0;
     double scale = 100;
     int a = 255;
-    int layer = 0;
+    int layer;
+    int layerBeforeChange;
+
+    void costumeSetup (string name)
+    {
+        int w, h;
+        costumesName.emplace_back (name);
+        SDL_QueryTexture (costumes [curCostumeNum], nullptr, nullptr, &w, &h);
+        costumesWidth.emplace_back (w);
+        costumesHeight.emplace_back (h);
+    }
+
+    void setup ()
+    {
+        double var = scale / 300 ;
+        img_rect.x = x - costumesWidth [curCostumeNum] * var / 2;
+        img_rect.y = y - costumesHeight [curCostumeNum] * var / 2;
+        img_rect.w = costumesWidth [curCostumeNum] * var;
+        img_rect.h = costumesHeight [curCostumeNum] * var;
+    }
 
     void draw (SDL_Renderer* m_renderer)
     {
+        if (costumes.empty ()) return;
         if (!visible) {return;}
-        SDL_QueryTexture (m_img, NULL, NULL, &w, &h);
-        img_rect.x = x - w / 6;
-        img_rect.y = y - h / 6;
-        img_rect.w = w / 3;
-        img_rect.h = h / 3;
-        img_src.x = 0;
-        img_src.y = 0;
-        img_src.w = w / 1;
-        img_src.h = h / 1;
-        // copy the texture to the rendering context
-        SDL_RenderCopy (m_renderer, m_img, &img_src, &img_rect);
+        setup ();
+        SDL_RenderCopyEx (m_renderer, costumes [curCostumeNum], nullptr, &img_rect, direction, nullptr, SDL_FLIP_NONE);
     }
 };
 

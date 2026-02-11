@@ -4,15 +4,16 @@
 
 #include "sprite.h"
 
-void setupScreen (SDL_Renderer *m_renderer, TTF_Font *font) {
-    // Clear the window with a background
+void setupScreen (SDL_Renderer *m_renderer, TTF_Font *font, Stage &stage)
+{
     SDL_SetRenderDrawColor (m_renderer, 200, 200, 200, 255);
     SDL_RenderClear (m_renderer);
     SDL_SetRenderDrawColor (m_renderer, 255, 255, 255, 255);
-    SDL_Rect mainStage = {870, 120, 620, 480};
-    SDL_RenderFillRect (m_renderer, &mainStage);
     SDL_Rect panel = {870, 615, 490, 130};
     SDL_RenderFillRect (m_renderer, &panel);
+    SDL_Rect mainStage = {870, 120, 620, 480};
+    SDL_RenderFillRect (m_renderer, &mainStage);
+    stage.draw (m_renderer, mainStage);
     SDL_Rect panel2 = {1370, 615, 120, 500};
     SDL_RenderFillRect (m_renderer, &panel2);
     SDL_Rect codeMenu = {10, 120, 100, 900};
@@ -49,38 +50,38 @@ void setupScreen (SDL_Renderer *m_renderer, TTF_Font *font) {
         SDL_Surface *textSurface = TTF_RenderText_Blended (font, "Motion", textColor);
         SDL_Texture *textTexture = SDL_CreateTextureFromSurface (m_renderer, textSurface);
         SDL_Rect textRect = {24, 137, textSurface -> w, textSurface -> h};
-        SDL_RenderCopy (m_renderer, textTexture, NULL, &textRect);
+        SDL_RenderCopy (m_renderer, textTexture, nullptr, &textRect);
         SDL_DestroyTexture (textTexture);
         SDL_FreeSurface (textSurface);
         textSurface = TTF_RenderText_Blended (font, "Looks", textColor);
         textTexture = SDL_CreateTextureFromSurface (m_renderer, textSurface);
         textRect = {28, 197, textSurface -> w, textSurface -> h};
-        SDL_RenderCopy (m_renderer, textTexture, NULL, &textRect);
+        SDL_RenderCopy (m_renderer, textTexture, nullptr, &textRect);
         SDL_DestroyTexture (textTexture);
         SDL_FreeSurface (textSurface);
         textSurface = TTF_RenderText_Blended (font, "Sound", textColor);
         textTexture = SDL_CreateTextureFromSurface (m_renderer, textSurface);
         textRect = {24, 257, textSurface -> w, textSurface -> h};
-        SDL_RenderCopy (m_renderer, textTexture, NULL, &textRect);
+        SDL_RenderCopy (m_renderer, textTexture, nullptr, &textRect);
         SDL_DestroyTexture (textTexture);
         SDL_FreeSurface (textSurface);
         textColor = {0, 0, 0};
         textSurface = TTF_RenderText_Blended (font, "Code", textColor);
         textTexture = SDL_CreateTextureFromSurface (m_renderer, textSurface);
         textRect = {53, 75, textSurface -> w, textSurface -> h};
-        SDL_RenderCopy (m_renderer, textTexture, NULL, &textRect);
+        SDL_RenderCopy (m_renderer, textTexture, nullptr, &textRect);
         SDL_DestroyTexture (textTexture);
         SDL_FreeSurface (textSurface);
         textSurface = TTF_RenderText_Blended (font, "Costumes", textColor);
         textTexture = SDL_CreateTextureFromSurface (m_renderer, textSurface);
         textRect = {150, 75, textSurface -> w, textSurface -> h};
-        SDL_RenderCopy (m_renderer, textTexture, NULL, &textRect);
+        SDL_RenderCopy (m_renderer, textTexture, nullptr, &textRect);
         SDL_DestroyTexture (textTexture);
         SDL_FreeSurface (textSurface);
         textSurface = TTF_RenderText_Blended (font, "Sounds", textColor);
         textTexture = SDL_CreateTextureFromSurface (m_renderer, textSurface);
         textRect = {285, 75, textSurface -> w, textSurface -> h};
-        SDL_RenderCopy (m_renderer, textTexture, NULL, &textRect);
+        SDL_RenderCopy (m_renderer, textTexture, nullptr, &textRect);
         SDL_DestroyTexture (textTexture);
         SDL_FreeSurface (textSurface);
     }

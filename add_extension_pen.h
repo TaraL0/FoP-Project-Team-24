@@ -10,9 +10,9 @@ struct Pen
 
     void draw (SDL_Renderer* m_renderer, Sprite &sprite)
     {
-        for (int dx = -penWidth / 2; dx <= penWidth / 2; dx ++)
-            for (int dy = -penWidth / 2; dy <= penWidth / 2; dy ++)
-                SDL_RenderDrawLine (m_renderer, );
+        if (!penDown) return;
+        thickLineRGBA (m_renderer, sprite.x, sprite.y, sprite.x + 1, sprite.y + 1,
+            penWidth, penColor.r, penColor.g, penColor.b, penColor.a);
     }
 
     void penUp () {penDown = false;}
@@ -20,20 +20,6 @@ struct Pen
     void eraseAll () {}
 
     void stamp () {}
-
-    void changePen (string value, double num)
-    {
-        if (value == "color") {}
-        else if (value == "saturation") {}
-        else if (value == "brightness") {}
-    }
-
-    void setPen (string value, double num)
-    {
-        if (value == "color") {}
-        else if (value == "saturation") {}
-        else if (value == "brightness") {}
-    }
 
     void setPenColor (SDL_Color color) {penColor = color;}
 

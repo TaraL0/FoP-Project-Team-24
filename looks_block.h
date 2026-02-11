@@ -16,7 +16,7 @@ void sayText (Sprite &sprite, string text, TTF_Font *font, SDL_Renderer *m_rende
         SDL_SetRenderDrawColor (m_renderer, 0, 0, 0, 255);
         SDL_RenderDrawRect (m_renderer, &bubble);
         SDL_Rect textRect = {bubble.x + 8, bubble.y + 8, textSurface -> w, textSurface -> h};
-        SDL_RenderCopy (m_renderer, textTexture, NULL, &textRect);
+        SDL_RenderCopy (m_renderer, textTexture, nullptr, &textRect);
         SDL_DestroyTexture (textTexture);
         SDL_FreeSurface (textSurface);
     }
@@ -100,7 +100,7 @@ void nextCostume (Sprite &sprite, SDL_Renderer *m_renderer)
     else {sprite.curCostumeNum = 0;}
 }
 
-void switchBackdrop (Stage &stage, string name, SDL_Renderer *m_renderer, SDL_Rect mainStage) // !!!!!!!!!!!!!!!!!!!!!!!!!
+void switchBackdrop (Stage &stage, string name, SDL_Renderer *m_renderer)
 {
     bool found = false;
     for (int i = 0; i < stage.backdrops.size (); i ++)
@@ -110,7 +110,7 @@ void switchBackdrop (Stage &stage, string name, SDL_Renderer *m_renderer, SDL_Re
     if (!found) {return;}
 }
 
-void nextBackdrop (Stage &stage, SDL_Renderer *m_renderer, SDL_Rect mainStage) // !!!!!!!!!!!!!!!!!!!!!!!!!!
+void nextBackdrop (Stage &stage, SDL_Renderer *m_renderer)
 {
     if (stage.curBackdropNum != stage.backdrops.size () - 1) {stage.curBackdropNum ++;}
     else {stage.curBackdropNum = 0;}
@@ -134,16 +134,36 @@ void showSprite (Sprite &sprite) {sprite.visible = true;}
 
 void hideSprite (Sprite &sprite) {sprite.visible = false;}
 
-void goToLayer (Sprite &sprite, string value) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+void goToLayer (vector <Sprite> &spritesDQ, Sprite &sprite, string value, int numOfSprites)
 {
-    if (value == "front") {}
-    else if (value == "back") {}
+    if (value == "front" and sprite.layer == numOfSprites - 1) return;
+    if (value == "back" and sprite.layer == 0) return;
+    sprite.layerBeforeChange = sprite.layer;
+    if (value == "front") {sprite.layer = numOfSprites - 1;}
+    else if (value == "back") {sprite.layer = 0;}
+    Sprite sp = sprite;
+    spritesDQ.erase (spritesDQ.begin () + sprite.layerBeforeChange);
+    spritesDQ.insert (spritesDQ.begin () + sprite.layer, sp);
 }
 
-void goLayers (Sprite &sprite, string value, int layerNum) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+void goLayers (vector <Sprite> &spritesDQ, Sprite &sprite, string value, int layerNum, int numOfSprites)
 {
-    if (value == "forward") {}
-    else if (value == "backward") {}
+    sprite.layerBeforeChange = sprite.layer;
+    if (value == "forward")
+    {
+        if (sprite.layer == numOfSprites - 1) return;
+        if (sprite.layer + layerNum > numOfSprites - 1) {sprite.layer = numOfSprites - 1;}
+        else {sprite.layer += layerNum;}
+    }
+    else if (value == "backward")
+    {
+        if (sprite.layer == 0) return;
+        if (sprite.layer - layerNum < 0) {sprite.layer = 0;}
+        else {sprite.layer -= layerNum;}
+    }
+    Sprite sp = sprite;
+    spritesDQ.erase (spritesDQ.begin () + sprite.layerBeforeChange);
+    spritesDQ.insert (spritesDQ.begin () + sprite.layer, sp);
 }
 
 void costumeReport (Sprite &sprite, string input, SDL_Renderer *m_renderer, TTF_Font *font)
