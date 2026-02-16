@@ -84,7 +84,7 @@ void thinkTextForSec (Sprite &sprite, string text, int seconds, TTF_Font *font, 
     SDL_Delay (seconds * 1000);
 }
 
-void switchCostume (Sprite &sprite, string name, SDL_Renderer *m_renderer)
+void switchCostume (Sprite &sprite, string name)
 {
     bool found = false;
     for (int i = 0; i < sprite.costumes.size (); i ++)
@@ -94,13 +94,13 @@ void switchCostume (Sprite &sprite, string name, SDL_Renderer *m_renderer)
     if (!found) {return;}
 }
 
-void nextCostume (Sprite &sprite, SDL_Renderer *m_renderer)
+void nextCostume (Sprite &sprite)
 {
     if (sprite.curCostumeNum != sprite.costumes.size () - 1) {sprite.curCostumeNum ++;}
     else {sprite.curCostumeNum = 0;}
 }
 
-void switchBackdrop (Stage &stage, string name, SDL_Renderer *m_renderer)
+void switchBackdrop (Stage &stage, string name)
 {
     bool found = false;
     for (int i = 0; i < stage.backdrops.size (); i ++)
@@ -110,20 +110,20 @@ void switchBackdrop (Stage &stage, string name, SDL_Renderer *m_renderer)
     if (!found) {return;}
 }
 
-void nextBackdrop (Stage &stage, SDL_Renderer *m_renderer)
+void nextBackdrop (Stage &stage)
 {
     if (stage.curBackdropNum != stage.backdrops.size () - 1) {stage.curBackdropNum ++;}
     else {stage.curBackdropNum = 0;}
 }
 
-void changeSize (Sprite &sprite, double size, SDL_Renderer *m_renderer)
+void changeSize (Sprite &sprite, double size)
 {
     if (sprite.scale + size >= 300) {sprite.scale = 300;}
     else if (sprite.scale + size <= 10) {sprite.scale = 5;}
     else {sprite.scale += size;}
 }
 
-void setSize (Sprite &sprite, double size, SDL_Renderer *m_renderer)
+void setSize (Sprite &sprite, double size)
 {
     if (size >= 300) {sprite.scale = 300;}
     else if (size <= 10) {sprite.scale = 5;}
@@ -205,7 +205,7 @@ void costumeReport (Sprite &sprite, string input, SDL_Renderer *m_renderer, TTF_
     }
 }
 
-void backdropReport (Stage &stage, string input, SDL_Renderer *m_renderer, TTF_Font *font) // !!!!!!!!!!!!!!!!!!!!!!
+void backdropReport (Stage &stage, string input, SDL_Renderer *m_renderer, TTF_Font *font)
 {
     string output;
     if (input == "number")

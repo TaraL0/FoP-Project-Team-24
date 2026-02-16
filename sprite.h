@@ -33,6 +33,7 @@ struct Sprite
     double vol = 128.0;
     bool visible = true;
     int x, y;
+    int oldx, oldy;
     double direction = 0.0;
     vector <string> costumesName;
     vector <SDL_Texture*> costumes;
