@@ -1,0 +1,327 @@
+#ifndef BLOCK_MANAGER_H
+#define BLOCK_MANAGER_H
+
+#include "block_system.h"
+#include <algorithm>
+
+struct BlockManager {
+    vector<Block*> paletteBlocks;
+    vector<Block*> codeBlocks;
+    Block* draggingBlock = nullptr;
+    Block* hoveredBlock = nullptr;
+    SDL_Rect paletteArea = {112, 120, 330, 900};
+    SDL_Rect codeArea = {445, 120, 410, 900};
+    int snapDistance = 30;
+    TTF_Font* font = nullptr;
+    SDL_Renderer* renderer = nullptr;
+
+    BlockManager(SDL_Renderer* r, TTF_Font* f) : renderer(r), font(f) {
+        initializePaletteBlocks();
+    }
+
+    ~BlockManager() {
+        for (auto* block : paletteBlocks) delete block;
+        for (auto* block : codeBlocks) delete block;
+    }
+
+    void initializePaletteBlocks() {
+        int startY = 140;
+        int spacing = 55;
+
+        Block* moveBlock = new Block(1, "move", "move", BlockType::MOTION);
+        moveBlock->addParameter("steps", "10");
+        moveBlock->displayText = "move       steps";
+        moveBlock->x = 122;
+        moveBlock->y = startY;
+        paletteBlocks.push_back(moveBlock);
+
+        Block* turnRightBlock = new Block(2, "turnRight", "turn right", BlockType::MOTION);
+        turnRightBlock->addParameter("degrees", "15");
+        turnRightBlock->displayText = "turn ↻      degrees";
+        turnRightBlock->x = 122;
+        turnRightBlock->y = startY + spacing;
+        paletteBlocks.push_back(turnRightBlock);
+
+        Block* turnLeftBlock = new Block(3, "turnLeft", "turn left", BlockType::MOTION);
+        turnLeftBlock->addParameter("degrees", "15");
+        turnLeftBlock->displayText = "turn ↺      degrees";
+        turnLeftBlock->x = 122;
+        turnLeftBlock->y = startY + spacing * 2;
+        paletteBlocks.push_back(turnLeftBlock);
+
+        Block* goToBlock = new Block(4, "goTo", "go to x:    y:", BlockType::MOTION);
+        goToBlock->addParameter("x", "0");
+        goToBlock->addParameter("y", "0");
+        goToBlock->width = 220;
+        goToBlock->x = 122;
+        goToBlock->y = startY + spacing * 3;
+        paletteBlocks.push_back(goToBlock);
+
+        Block* glideBlock = new Block(5, "glide", "glide    secs to x:   y:", BlockType::MOTION);
+        glideBlock->addParameter("secs", "1");
+        glideBlock->addParameter("x", "0");
+        glideBlock->addParameter("y", "0");
+        glideBlock->width = 280;
+        glideBlock->x = 122;
+        glideBlock->y = startY + spacing * 4;
+        paletteBlocks.push_back(glideBlock);
+
+        Block* flagBlock = new Block(10, "whenFlagClicked", "when 🚩 clicked", BlockType::EVENTS, BlockShape::HAT);
+        flagBlock->x = 122;
+        flagBlock->y = startY + spacing * 6;
+        paletteBlocks.push_back(flagBlock);
+
+        Block* keyPressBlock = new Block(11, "whenKeyPressed", "when      key pressed", BlockType::EVENTS, BlockShape::HAT);
+        keyPressBlock->addParameter("key", "space");
+        keyPressBlock->x = 122;
+        keyPressBlock->y = startY + spacing * 7;
+        paletteBlocks.push_back(keyPressBlock);
+
+        Block* repeatBlock = new Block(20, "repeat", "repeat", BlockType::CONTROL, BlockShape::C_BLOCK);
+        repeatBlock->addParameter("times", "10");
+        repeatBlock->displayText = "repeat";
+        repeatBlock->height = 80;
+        repeatBlock->x = 122;
+        repeatBlock->y = startY + spacing * 9;
+        paletteBlocks.push_back(repeatBlock);
+
+        Block* foreverBlock = new Block(21, "forever", "forever", BlockType::CONTROL, BlockShape::C_BLOCK);
+        foreverBlock->height = 80;
+        foreverBlock->x = 122;
+        foreverBlock->y = startY + spacing * 11;
+        paletteBlocks.push_back(foreverBlock);
+
+        Block* waitBlock = new Block(22, "wait", "wait      seconds", BlockType::CONTROL);
+        waitBlock->addParameter("secs", "1");
+        waitBlock->x = 122;
+        waitBlock->y = startY + spacing * 13;
+        paletteBlocks.push_back(waitBlock);
+
+        Block* sayBlock = new Block(30, "say", "say", BlockType::LOOKS);
+        sayBlock->addParameter("text", "Hello!");
+        sayBlock->displayText = "say";
+        sayBlock->x = 122;
+        sayBlock->y = startY + spacing * 15;
+        paletteBlocks.push_back(sayBlock);
+
+        Block* sayForBlock = new Block(31, "sayFor", "say       for    secs", BlockType::LOOKS);
+        sayForBlock->addParameter("text", "Hello!");
+        sayForBlock->addParameter("secs", "2");
+        sayForBlock->width = 250;
+        sayForBlock->x = 122;
+        sayForBlock->y = startY + spacing * 16;
+        paletteBlocks.push_back(sayForBlock);
+    }
+
+    void drawAll() {
+        for (auto* block : paletteBlocks) {
+            block->draw(renderer, font);
+        }
+
+        for (auto* block : codeBlocks) {
+            block->draw(renderer, font);
+        }
+
+        if (draggingBlock) {
+            draggingBlock->draw(renderer, font);
+        }
+    }
+
+    void handleMouseDown(int mouseX, int mouseY) {
+        for (auto it = codeBlocks.rbegin(); it != codeBlocks.rend(); ++it) {
+            if ((*it)->containsPoint(mouseX, mouseY)) {
+                draggingBlock = *it;
+                draggingBlock->startDrag(mouseX, mouseY);
+
+                if (draggingBlock->prevBlock) {
+                    draggingBlock->prevBlock->nextBlock = nullptr;
+                    draggingBlock->prevBlock = nullptr;
+                }
+                return;
+            }
+        }
+
+        for (auto* block : paletteBlocks) {
+            if (block->containsPoint(mouseX, mouseY)) {
+                draggingBlock = block->clone();
+                draggingBlock->x = mouseX - block->width / 2;
+                draggingBlock->y = mouseY - block->height / 2;
+                draggingBlock->startDrag(mouseX, mouseY);
+                return;
+            }
+        }
+    }
+
+    void handleMouseMove(int mouseX, int mouseY) {
+        hoveredBlock = nullptr;
+        for (auto* block : codeBlocks) {
+            block->isHovered = false;
+            if (block->containsPoint(mouseX, mouseY) && block != draggingBlock) {
+                block->isHovered = true;
+                hoveredBlock = block;
+            }
+        }
+
+        if (draggingBlock) {
+            draggingBlock->updateDrag(mouseX, mouseY);
+            highlightSnapTarget();
+        }
+    }
+
+    void handleMouseUp(int mouseX, int mouseY) {
+        if (!draggingBlock) return;
+        draggingBlock->endDrag();
+
+        if (isInCodeArea(mouseX, mouseY)) {
+            Block* snapTarget = findSnapTarget();
+
+            if (snapTarget) {
+                connectBlocks(snapTarget, draggingBlock);
+            }
+
+            if (find(codeBlocks.begin(), codeBlocks.end(), draggingBlock) == codeBlocks.end()) {
+                codeBlocks.push_back(draggingBlock);
+            }
+        }
+        else {
+            delete draggingBlock;
+        }
+
+        draggingBlock = nullptr;
+    }
+
+    bool isInCodeArea(int x, int y) {
+        return x >= codeArea.x &&
+               x <= codeArea.x + codeArea.w &&
+               y >= codeArea.y &&
+               y <= codeArea.y + codeArea.h;
+    }
+
+    Block* findSnapTarget() {
+        for (auto* block : codeBlocks) {
+            if (block == draggingBlock) continue;
+
+            int dx = abs(block->x - draggingBlock->x);
+            int dy = abs((block->y + block->height) - draggingBlock->y);
+
+            if (dx < snapDistance && dy < snapDistance) {
+                return block;
+            }
+        }
+        return nullptr;
+    }
+
+    void connectBlocks(Block* top, Block* bottom) {
+        top->nextBlock = bottom;
+        bottom->prevBlock = top;
+
+        bottom->x = top->x;
+        bottom->y = top->y + top->height + 4;
+
+        bottom->updateConnectedBlocks();
+    }
+
+    void highlightSnapTarget() {
+        for (auto* block : codeBlocks) {
+            block->isHovered = false;
+        }
+
+        Block* target = findSnapTarget();
+        if (target) {
+            target->isHovered = true;
+        }
+    }
+
+    void executeAllScripts(Sprite& sprite) {
+        for (auto* block : codeBlocks) {
+            if (block->shape == BlockShape::HAT && block->prevBlock == nullptr) {
+                executeBlockChain(block, sprite);
+            }
+        }
+    }
+
+    void executeBlockChain(Block* startBlock, Sprite& sprite) {
+        Block* current = startBlock;
+
+        while (current != nullptr) {
+            executeBlock(current, sprite);
+            current = current->nextBlock;
+        }
+    }
+
+    void executeBlock(Block* block, Sprite& sprite) {
+        if (!block) return;
+
+        string name = block->name;
+
+        if (name == "move") {
+            int steps = 10;
+            if (!block->parameters.empty()) {
+                steps = stoi(block->parameters[0].value);
+            }
+            moveSteps(sprite, steps);
+        }
+        else if (name == "turnRight") {
+            int degrees = 15;
+            if (!block->parameters.empty()) {
+                degrees = stoi(block->parameters[0].value);
+            }
+            turnRight(sprite, degrees);
+        }
+        else if (name == "turnLeft") {
+            int degrees = 15;
+            if (!block->parameters.empty()) {
+                degrees = stoi(block->parameters[0].value);
+            }
+            turnLeft(sprite, degrees);
+        }
+        else if (name == "goTo") {
+            int x = 0, y = 0;
+            if (block->parameters.size() >= 2) {
+                x = stoi(block->parameters[0].value);
+                y = stoi(block->parameters[1].value);
+            }
+            goToCoords(sprite, x, y);
+        }
+        else if (name == "say") {
+            string text = "Hello!";
+            if (!block->parameters.empty()) {
+                text = block->parameters[0].value;
+            }
+            sayText(renderer, sprite, text, font);
+        }
+        else if (name == "sayFor") {
+            string text = "Hello!";
+            int secs = 2;
+            if (block->parameters.size() >= 2) {
+                text = block->parameters[0].value;
+                secs = stoi(block->parameters[1].value);
+            }
+            sayTextForSec(renderer, sprite, text, font, secs);
+        }
+        else if (name == "wait") {
+            int secs = 1;
+            if (!block->parameters.empty()) {
+                secs = stoi(block->parameters[0].value);
+            }
+            SDL_Delay(secs * 1000);
+        }
+        else if (name == "repeat") {
+            int times = 10;
+            if (!block->parameters.empty()) {
+                times = stoi(block->parameters[0].value);
+            }
+            for (int i = 0; i < times; i++) {
+                for (auto* inner : block->innerBlocks) {
+                    executeBlockChain(inner, sprite);
+                }
+            }
+        }
+    }
+
+    void stopExecution() {
+        cout << "Execution stopped!" << endl;
+    }
+};
+
+#endif
