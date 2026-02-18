@@ -12,6 +12,13 @@ add_executable(P1 main.cpp
         add_extension_pen.h
         file_menu.h
         costume_menu.h
+        control_block.h
+        sensing_block.h
+        operator_block.h
+        variable_block.h
+        myblock_block.h
+        event_block.h
+        debugger.h
         tinyfiledialogs.h
         tinyfiledialogs.c)
 
