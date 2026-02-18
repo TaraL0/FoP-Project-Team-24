@@ -11,6 +11,13 @@ add_executable(P1 main.cpp
         setup_screen.h
         add_extension_pen.h
         file_menu.h
-        costume_menu.h)
+        costume_menu.h
+        control_block.h
+        sensing_block.h
+        operator_block.h
+        variable_block.h
+        myblock_block.h
+        event_block.h
+        debugger.h)
 
 target_link_libraries (${PROJECT_NAME} -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer)
