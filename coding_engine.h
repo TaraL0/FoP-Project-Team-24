@@ -1,0 +1,5 @@
+
+#ifndef CODING_ENGINE_H
+#define CODING_ENGINE_H
+
+#endif //CODING_ENGINE_H
