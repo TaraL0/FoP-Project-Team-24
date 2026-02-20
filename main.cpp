@@ -10,6 +10,7 @@
 #include "myblock_block.h"
 #include "event_block.h"
 #include "debugger.h"
+#include "backdrop_menu.h"
 
 int main (int argc, char *argv [])
 {
@@ -28,6 +29,13 @@ int main (int argc, char *argv [])
     TTF_Font *font2 = TTF_OpenFont ("arial.ttf", 18);
     Stage stage;
     bool activatePenIcon = false;
+
+    BackdropLibrary backdropLib;
+    backdropLib.load (m_renderer, "Blue Sky", "backdrop_sky.png");
+    backdropLib.load (m_renderer, "Forest",   "backdrop_forest.png");
+    if (!backdropLib.entries.empty ())
+        backdropLib.setActive (0, stage);
+
     setupScreen (m_renderer, font, stage, activatePenIcon);
 
     VarManager varMgr;
@@ -40,7 +48,8 @@ int main (int argc, char *argv [])
     Uint32 timerStart = SDL_GetTicks ();
     BlockRegistry blockReg;
 
-    SDL_Rect makeBlockBtn = {10, 720, 100, 40};
+    SDL_Rect makeBlockBtn    = {10, 720, 100, 40};
+    SDL_Rect backdropMenuBtn = {10, 770, 100, 40};
 
     vector <Sprite> sprites (100);
     vector <Sprite> spritesDisplayQueue;
@@ -95,16 +104,22 @@ int main (int argc, char *argv [])
             {
                 int mx, my;
                 SDL_GetMouseState (&mx, &my);
-                if (mx >= makeBlockBtn.x and mx <= makeBlockBtn.x + makeBlockBtn.w and
-                    my >= makeBlockBtn.y and my <= makeBlockBtn.y + makeBlockBtn.h)
+                auto hit = [&](SDL_Rect r){ return mx>=r.x and mx<=r.x+r.w and my>=r.y and my<=r.y+r.h; };
+
+                if (hit (makeBlockBtn))
                 {
                     CustomBlockDefResult res = runCustomBlockMenu (m_renderer, font, blockReg);
                     if (res.confirmed)
-                    {
-                        blockReg.define (res.blockName, res.params, [](vector <Param> &p)
-                        {
-                        });
-                    }
+                        blockReg.define (res.blockName, res.params, [](vector <Param> &p) {});
+                }
+
+                if (hit (backdropMenuBtn))
+                    runBackdropMenu (m_renderer, font, stage, backdropLib);
+
+                if (hit (flagBtn))
+                {
+                    programRunning = true;
+                    resetTimer (timerStart);
                 }
             }
         }
@@ -129,18 +144,18 @@ int main (int argc, char *argv [])
             SDL_FreeSurface (s);
         }
 
-        for (auto &e : events)
-            if (e.type == SDL_MOUSEBUTTONDOWN and e.button.button == SDL_BUTTON_LEFT)
-            {
-                int mx, my;
-                SDL_GetMouseState (&mx, &my);
-                if (mx >= flagBtn.x and mx <= flagBtn.x + flagBtn.w and
-                    my >= flagBtn.y and my <= flagBtn.y + flagBtn.h)
-                {
-                    programRunning = true;
-                    resetTimer (timerStart);
-                }
-            }
+        SDL_SetRenderDrawColor (m_renderer, 60, 60, 180, 255);
+        SDL_RenderFillRect (m_renderer, &backdropMenuBtn);
+        if (font2)
+        {
+            SDL_Color w = {255, 255, 255};
+            SDL_Surface *s = TTF_RenderText_Blended (font2, "Backdrops", w);
+            SDL_Texture *t = SDL_CreateTextureFromSurface (m_renderer, s);
+            SDL_Rect r = {backdropMenuBtn.x + 4, backdropMenuBtn.y + 10, s -> w, s -> h};
+            SDL_RenderCopy (m_renderer, t, nullptr, &r);
+            SDL_DestroyTexture (t);
+            SDL_FreeSurface (s);
+        }
 
         if (programRunning)
         {

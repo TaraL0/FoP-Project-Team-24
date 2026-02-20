@@ -19,6 +19,7 @@ add_executable(P1 main.cpp
         myblock_block.h
         event_block.h
         debugger.h
+        backdrop_menu.h
         tinyfiledialogs.h
         tinyfiledialogs.c)
 
