@@ -9,8 +9,8 @@ struct ArgVal
 {
     enum Kind { NUM, STR, BOOL };
     Kind kind = NUM;
-    string sVal = "";         
-    bool bVal = false;       
+    string sVal = "";
+    bool bVal = false;
     double asNum () const { return sVal.empty () ? 0 : atof (sVal.c_str ()); }
     int asInt () const { return (int)asNum (); }
 };
@@ -91,6 +91,7 @@ struct CodingEngine
     int curCategory = -1;
     vector<ExecState> execStates;
     bool globalRunning = false;
+    bool showPenBlocks = false;
     static SDL_Color cMotion() { return {66, 133, 244, 255}; }
     static SDL_Color cLooks() { return {153, 102, 255, 255}; }
     static SDL_Color cSound() { return {207, 99, 207, 255}; }
@@ -101,6 +102,10 @@ struct CodingEngine
     static SDL_Color cVariable() { return {255, 140, 26, 255}; }
     static SDL_Color cPen() { return {14, 154, 108, 255}; }
     static SDL_Color cMyBlocks() { return {255, 102, 128, 255}; }
+    void setPenVisible (bool visible)
+    {
+        showPenBlocks = visible;
+    }
 
     void init ()
     {
@@ -197,6 +202,12 @@ struct CodingEngine
         palette.push_back ({"pen_set_color","set pen color to %s", cPen(), 8});
         palette.push_back ({"pen_set_width","set pen size to %n", cPen(), 8});
         palette.push_back ({"pen_change_width","change pen size by %n", cPen(), 8});
+    }
+    bool shouldShowPaletteBlock (int paletteIdx) const
+    {
+        if (paletteIdx < 0 || paletteIdx >= (int)palette.size ()) return false;
+        if (palette[paletteIdx].category == 8 && !showPenBlocks) return false;
+        return true;
     }
 
     int layoutBlockWidth (BlockInst &b, TTF_Font *font)
@@ -316,13 +327,19 @@ struct CodingEngine
         add ("Sensing",cSensing(),5);
         add ("Operators",cOperator(), 6);
         add ("Variables",cVariable(), 7);
-        add ("Pen",cPen(),8);
+        if (showPenBlocks)
+        {
+            add ("Pen",cPen(),8);
+        }
         return v;
     }
 
+
     int catBarHeight ()
     {
-        return 24 * 9 + 2 * 9 + 8;
+        int count = 8;
+        if (showPenBlocks) count = 9;
+        return 24 * count + 2 * count + 8;
     }
 
     void renderText (SDL_Renderer *r, TTF_Font *f, const string &txt,
@@ -434,6 +451,7 @@ struct CodingEngine
         for (int i = 0; i < (int)palette.size (); i++)
         {
             if (curCategory >= 0 && palette[i].category != curCategory) continue;
+            if (!shouldShowPaletteBlock (i)) continue;
             BlockInst tmp;
             tmp.paletteIdx = i;
             tmp.args = palette[i].defaultArgs ();
@@ -449,7 +467,7 @@ struct CodingEngine
         SDL_RenderFillRect (r, &scriptRect);
         for (int i = 0; i < (int)blocks.size (); i++)
         {
-            if (i == dragIdx && !draggingFromPalette) continue; // drawn last
+            if (i == dragIdx && !draggingFromPalette) continue;
             layoutBlock (blocks[i], f);
             renderOneBlock (r, f, blocks[i]);
         }
@@ -489,6 +507,7 @@ struct CodingEngine
         for (int i = 0; i < (int)palette.size (); i++)
         {
             if (curCategory >= 0 && palette[i].category != curCategory) continue;
+            if (!shouldShowPaletteBlock (i)) continue;
             BlockInst tmp;
             tmp.paletteIdx = i;
             tmp.args = palette[i].defaultArgs ();
@@ -718,7 +737,6 @@ struct CodingEngine
 
                 if (abs (blocks[idx].x - bx) < 30 && abs (blocks[idx].y - by) < 15)
                 {
-                    /* snap! */
                     blocks[idx].x = bx;
                     blocks[idx].y = by + 2;
                     ch.blockIds.push_back (idx);
@@ -899,7 +917,7 @@ struct CodingEngine
                 if (es.pc + 1 < (int)ch.blockIds.size ())
                 {
                     es.pc++;
-                    return;  
+                    return;
                 }
             }
         }
@@ -955,7 +973,6 @@ struct CodingEngine
             es.pc = es.repeatPC;
         }
 
-        /* end of chain */
         if (es.pc >= (int)ch.blockIds.size ())
             es.running = false;
     }

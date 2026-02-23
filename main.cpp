@@ -56,6 +56,27 @@ bool inside (int mx, int my, SDL_Rect &r)
     return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h;
 }
 
+SDL_Rect backdropBtn = {870, 650, 120, 44};
+
+void drawBackdropButton (SDL_Renderer *r, TTF_Font *f)
+{
+    roundedBoxRGBA (r, backdropBtn.x, backdropBtn.y,
+                    backdropBtn.x + backdropBtn.w,
+                    backdropBtn.y + backdropBtn.h,
+                    6, 100, 60, 180, 255);
+    if (!f) return;
+    SDL_Color white = {255, 255, 255, 255};
+    SDL_Surface *s = TTF_RenderText_Blended (f, "Backdrops", white);
+    if (!s) return;
+    SDL_Texture *t = SDL_CreateTextureFromSurface (r, s);
+    SDL_Rect d = {backdropBtn.x + (backdropBtn.w - s->w) / 2,
+                  backdropBtn.y + (backdropBtn.h - s->h) / 2,
+                  s->w, s->h};
+    SDL_RenderCopy (r, t, nullptr, &d);
+    SDL_DestroyTexture (t);
+    SDL_FreeSurface (s);
+}
+
 int main (int, char *[])
 {
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
@@ -76,6 +97,7 @@ int main (int, char *[])
     TTF_Font *font2 = TTF_OpenFont ("arial.ttf", 18);
     costumeEditor.init(font);
     Stage stage;
+    stage.curBackdropNum = 0;
     SDL_Texture *penLayer = SDL_CreateTexture (ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, DM.w, DM.h);
     SDL_SetTextureBlendMode (penLayer, SDL_BLENDMODE_BLEND);
     SDL_Texture *costumeMenuScreen = SDL_CreateTexture (ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, DM.w, DM.h);
@@ -102,6 +124,8 @@ int main (int, char *[])
     engine.paletteRect = {0,   120, 220, DM.h - 120};
     engine.scriptRect  = {220, 120, 640, DM.h - 120};
 
+    BackdropLibrary backdropLib;
+    SpritePropPanel spritePanel;
     bool quit = false, activatePenIcon = false;
 
     while (!quit)
@@ -120,12 +144,18 @@ int main (int, char *[])
                 int mx = ev.button.x, my = ev.button.y;
                 if (inside (mx, my, flagBtn))  engine.startGreenFlag ();
                 if (inside (mx, my, stopBtn))  engine.stopAll ();
+                if (inside (mx, my, backdropBtn))
+                {
+                    runBackdropMenu (ren, font, stage, backdropLib);
+                }
             }
 
             engine.handleEvent (ev, font2);
             costumeEditor.handleEvent(ev, ren);
             setupCostumeMenuScreen(ren, costumeMenuScreen, ev, stage, font, sprites[0]);
             setupExtensionScreen(ren, extensionMenuScreen, ev, font, activatePenIcon);
+            if (activatePenIcon) engine.setPenVisible (true);
+            spritePanel.handleEvent (ev, sprites[0]);
         }
 
         if (engine.dragIdx < 0)
@@ -146,6 +176,8 @@ int main (int, char *[])
         setupCostumeMenuScreen(ren, costumeMenuScreen, ev, stage, font, sprites[0]);
         for (auto &sp : sprites)
             sp.draw (ren);
+        drawBackdropButton (ren, font2);
+        spritePanel.render (ren, font2, sprites[0]);
         setupExtensionScreen(ren, extensionMenuScreen, ev, font, activatePenIcon);
         SDL_RenderPresent (ren);
         SDL_Delay (16);

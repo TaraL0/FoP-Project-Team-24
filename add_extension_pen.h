@@ -52,7 +52,7 @@ void stamp (SDL_Renderer *m_renderer, Sprite &sprite, SDL_Texture *penLayer)
 inline void setupExtensionScreen (SDL_Renderer *m_renderer, SDL_Texture *extensionMenuScreen, SDL_Event &event, TTF_Font *font, bool &activatePenIcon)
 {
     static bool show = false;
-    SDL_Rect addExtensionIcon = {10, 942, 100, 60};
+    SDL_Rect addExtensionIcon = {500, 5, 100, 40};
     if (event.type == SDL_MOUSEBUTTONDOWN and event.button.button == SDL_BUTTON_LEFT)
     {
         int xm, ym;
