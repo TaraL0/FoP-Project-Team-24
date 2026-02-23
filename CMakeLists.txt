@@ -19,7 +19,9 @@ add_executable(P1 main.cpp
         myblock_block.h
         event_block.h
         debugger.h
+        backdrop_menu.h
         tinyfiledialogs.h
-        tinyfiledialogs.c)
+        tinyfiledialogs.c
+        coding_engine.h)
 
 target_link_libraries (${PROJECT_NAME} -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer)

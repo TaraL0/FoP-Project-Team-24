@@ -4,9 +4,11 @@
 
 struct Pen
 {
-    bool penDown = true;
+    bool penDown = false;
     SDL_Color penColor = {0, 0, 255, 255};
     int penWidth = 1;
+    int lastX = 0, lastY = 0;
+
 
     void draw (SDL_Renderer *m_renderer, Sprite &sprite, SDL_Texture *penLayer)
     {
@@ -79,7 +81,7 @@ inline void setupExtensionScreen (SDL_Renderer *m_renderer, SDL_Texture *extensi
         SDL_DestroyTexture (textTexture);
         SDL_FreeSurface (textSurface);
     }
-    SDL_Texture *penChoosingOption = IMG_LoadTexture (m_renderer, "pen option.png");
+    static SDL_Texture *penChoosingOption = IMG_LoadTexture (m_renderer, "pen option.png");
     int w, h;
     SDL_QueryTexture (penChoosingOption, nullptr, nullptr, &w, &h);
     SDL_Rect img_rect_penChoosingOption = {20, 80, w, h};

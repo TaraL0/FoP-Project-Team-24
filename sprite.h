@@ -1,4 +1,3 @@
-
 #ifndef SPRITE_H
 #define SPRITE_H
 
@@ -32,8 +31,8 @@ struct Sprite
     Mix_Chunk *m_sound = nullptr;
     double vol = 128.0;
     bool visible = true;
-    int x, y;
-    int oldx, oldy;
+    int x, y, x2, y2;
+    int oldx = x, oldy = y;
     double direction = 0.0;
     vector <string> costumesName;
     vector <SDL_Texture*> costumes;

@@ -1,3 +1,7 @@
+#include <windows.h>
+#include <commdlg.h>
+#include "tinyfiledialogs.h"
+#include <SDL2/SDL_syswm.h>
 #include "setup_screen.h"
 #include "motion_block.h"
 #include "looks_block.h"
@@ -10,208 +14,155 @@
 #include "myblock_block.h"
 #include "event_block.h"
 #include "debugger.h"
+#include "costume_menu.h"
+#include "coding_engine.h"
+#include "backdrop_menu.h"
 
-int main (int argc, char *argv [])
+SDL_Rect flagBtn = {880, 78, 50, 36};
+SDL_Rect stopBtn = {940, 78, 50, 36};
+
+void drawFlag (SDL_Renderer *r, TTF_Font *f)
 {
-    Uint32 SDL_flags = SDL_INIT_VIDEO | SDL_INIT_TIMER;
-    Uint32 WND_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP;
-    SDL_Window *m_window;
-    SDL_Renderer *m_renderer;
-    SDL_Init (SDL_flags);
+    roundedBoxRGBA (r, flagBtn.x, flagBtn.y,
+                    flagBtn.x + flagBtn.w, flagBtn.y + flagBtn.h,
+                    6, 40, 180, 60, 255);
+    if (!f) return;
+    SDL_Surface *s = TTF_RenderUTF8_Blended (f, "\xe2\x96\xb6", {255,255,255,255});
+    if (!s) return;
+    SDL_Texture *t = SDL_CreateTextureFromSurface (r, s);
+    SDL_Rect d = {flagBtn.x + 14, flagBtn.y + 6, s->w, s->h};
+    SDL_RenderCopy (r, t, nullptr, &d);
+    SDL_DestroyTexture (t);
+    SDL_FreeSurface (s);
+}
+
+void drawStop (SDL_Renderer *r, TTF_Font *f)
+{
+    roundedBoxRGBA (r, stopBtn.x, stopBtn.y,
+                    stopBtn.x + stopBtn.w, stopBtn.y + stopBtn.h,
+                    6, 220, 50, 50, 255);
+    if (!f) return;
+    SDL_Surface *s = TTF_RenderUTF8_Blended (f, "\xe2\x96\xa0", {255,255,255,255});
+    if (!s) return;
+    SDL_Texture *t = SDL_CreateTextureFromSurface (r, s);
+    SDL_Rect d = {stopBtn.x + 16, stopBtn.y + 6, s->w, s->h};
+    SDL_RenderCopy (r, t, nullptr, &d);
+    SDL_DestroyTexture (t);
+    SDL_FreeSurface (s);
+}
+
+bool inside (int mx, int my, SDL_Rect &r)
+{
+    return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h;
+}
+
+int main (int, char *[])
+{
+    SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     TTF_Init ();
-    SDL_CreateWindowAndRenderer (1920, 480, WND_flags, &m_window, &m_renderer);
-    SDL_RaiseWindow (m_window);
+    IMG_Init (IMG_INIT_PNG);
+    Mix_OpenAudio (44100, MIX_DEFAULT_FORMAT, 2, 2048);
+
+    SDL_Window   *win = nullptr;
+    SDL_Renderer *ren = nullptr;
+    SDL_CreateWindowAndRenderer (1920, 480, SDL_WINDOW_FULLSCREEN_DESKTOP,
+                                &win, &ren);
+    SDL_RaiseWindow (win);
+
     SDL_DisplayMode DM;
     SDL_GetCurrentDisplayMode (0, &DM);
-    Mix_OpenAudio (44100, MIX_DEFAULT_FORMAT, 2, 2048);
-    TTF_Font *font  = TTF_OpenFont ("arial.ttf", 24);
+
+    TTF_Font *font  = TTF_OpenFont ("arial.ttf", 21);
     TTF_Font *font2 = TTF_OpenFont ("arial.ttf", 18);
+    costumeEditor.init(font);
     Stage stage;
-    bool activatePenIcon = false;
-    setupScreen (m_renderer, font, stage, activatePenIcon);
+    SDL_Texture *penLayer = SDL_CreateTexture (ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, DM.w, DM.h);
+    SDL_SetTextureBlendMode (penLayer, SDL_BLENDMODE_BLEND);
+    SDL_Texture *costumeMenuScreen = SDL_CreateTexture (ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, DM.w, DM.h);
+    SDL_SetTextureBlendMode (penLayer, SDL_BLENDMODE_BLEND);
+    SDL_Texture *extensionMenuScreen = SDL_CreateTexture (ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, DM.w, DM.h);
+    SDL_SetTextureBlendMode (penLayer, SDL_BLENDMODE_BLEND);
 
-    VarManager varMgr;
-    varMgr.defineVar ("score");
-    varMgr.defineVar ("lives");
-    varMgr.setVar ("lives", 3);
+    vector<Sprite> sprites (1);
+    sprites[0].x = 1180;
+    sprites[0].y = 360;
+    sprites[0].mainName = "Sprite1";
+    sprites[0].costumes.push_back (IMG_LoadTexture (ren, "scratch_cat.png"));
+    sprites[0].costumeSetup ("scratch_cat");
+    sprites[0].m_sound = Mix_LoadWAV ("Meow.wav");
+    sprites[0].layer = 0;
 
-    MessageBus msgBus;
-    Debugger dbg;
-    Uint32 timerStart = SDL_GetTicks ();
-    BlockRegistry blockReg;
+    Pen pen0;
+    VarManager  varMgr;
+    MessageBus  msgBus;
+    CodingEngine engine;
+    engine.init ();
 
-    SDL_Rect makeBlockBtn = {10, 720, 100, 40};
 
-    vector <Sprite> sprites (100);
-    vector <Sprite> spritesDisplayQueue;
+    engine.paletteRect = {0,   120, 220, DM.h - 120};
+    engine.scriptRect  = {220, 120, 640, DM.h - 120};
 
-    sprites [0].x = 1180; sprites [0].y = 360;
-    sprites [0].mainName = "Sprite1";
-    sprites [0].costumes.push_back (IMG_LoadTexture (m_renderer, "scratch_cat.png"));
-    sprites [0].costumeSetup ("scratch_cat");
-    sprites [0].costumes.push_back (IMG_LoadTexture (m_renderer, "costume2.png"));
-    sprites [0].costumeSetup ("costume2");
-    sprites [0].m_sound = Mix_LoadWAV ("Meow.wav");
-    sprites [0].layer = 0;
-    spritesDisplayQueue.push_back (sprites [0]);
-
-    sprites [1].x = 1190; sprites [1].y = 330;
-    sprites [1].mainName = "Sprite2";
-    sprites [1].costumes.push_back (IMG_LoadTexture (m_renderer, "ghost.png"));
-    sprites [1].costumeSetup ("ghost");
-    sprites [1].scale = 10;
-    sprites [1].layer = 1;
-    spritesDisplayQueue.push_back (sprites [1]);
-
-    sprites [2].x = 1180; sprites [2].y = 390;
-    sprites [2].mainName = "Sprite3";
-    sprites [2].costumes.push_back (IMG_LoadTexture (m_renderer, "human.png"));
-    sprites [2].costumeSetup ("human");
-    sprites [2].scale = 10;
-    sprites [2].layer = 2;
-    spritesDisplayQueue.push_back (sprites [2]);
-
-    int numOfSprites = spritesDisplayQueue.size ();
-
-    bool drag0 = false;
-    int offx0 = 0, offy0 = 0;
-    SDL_Rect flagBtn = {870, 75, 40, 40};
-    bool programRunning = false;
-
-    vector <SDL_Event> events;
-    bool quit = false;
+    bool quit = false, activatePenIcon = false;
 
     while (!quit)
     {
-        SDL_Event event;
-        events.clear ();
-        while (SDL_PollEvent (&event))
+        SDL_Event ev;
+        while (SDL_PollEvent (&ev))
         {
-            events.push_back (event);
-            if (event.type == SDL_KEYDOWN and event.key.keysym.sym == SDLK_ESCAPE)
+            if (ev.type == SDL_QUIT)
                 quit = true;
 
-            if (event.type == SDL_MOUSEBUTTONDOWN and event.button.button == SDL_BUTTON_LEFT)
+            if (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_ESCAPE)
+                quit = true;
+
+            if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT)
             {
-                int mx, my;
-                SDL_GetMouseState (&mx, &my);
-                if (mx >= makeBlockBtn.x and mx <= makeBlockBtn.x + makeBlockBtn.w and
-                    my >= makeBlockBtn.y and my <= makeBlockBtn.y + makeBlockBtn.h)
-                {
-                    CustomBlockDefResult res = runCustomBlockMenu (m_renderer, font, blockReg);
-                    if (res.confirmed)
-                    {
-                        blockReg.define (res.blockName, res.params, [](vector <Param> &p)
-                        {
-                        });
-                    }
-                }
+                int mx = ev.button.x, my = ev.button.y;
+                if (inside (mx, my, flagBtn))  engine.startGreenFlag ();
+                if (inside (mx, my, stopBtn))  engine.stopAll ();
             }
+
+            engine.handleEvent (ev, font2);
+            costumeEditor.handleEvent(ev, ren);
+            setupCostumeMenuScreen(ren, costumeMenuScreen, ev, stage, font, sprites[0]);
+            setupExtensionScreen(ren, extensionMenuScreen, ev, font, activatePenIcon);
         }
 
-        SDL_SetRenderDrawColor (m_renderer, 200, 200, 200, 255);
-        SDL_RenderClear (m_renderer);
-        setupScreen (m_renderer, font, stage, activatePenIcon);
+        if (engine.dragIdx < 0)
+            engine.autoRebuildChains ();
 
-        SDL_SetRenderDrawColor (m_renderer, 0, 200, 0, 255);
-        SDL_RenderFillRect (m_renderer, &flagBtn);
-
-        SDL_SetRenderDrawColor (m_renderer, 255, 100, 0, 255);
-        SDL_RenderFillRect (m_renderer, &makeBlockBtn);
-        if (font2)
+        if (engine.globalRunning)
         {
-            SDL_Color w = {255, 255, 255};
-            SDL_Surface *s = TTF_RenderText_Blended (font2, "My Block", w);
-            SDL_Texture *t = SDL_CreateTextureFromSurface (m_renderer, s);
-            SDL_Rect r = {makeBlockBtn.x + 4, makeBlockBtn.y + 10, s -> w, s -> h};
-            SDL_RenderCopy (m_renderer, t, nullptr, &r);
-            SDL_DestroyTexture (t);
-            SDL_FreeSurface (s);
+            engine.updateAll (sprites[0], stage, sprites, pen0, penLayer, varMgr, msgBus, font2, ren, quit);
         }
-
-        for (auto &e : events)
-            if (e.type == SDL_MOUSEBUTTONDOWN and e.button.button == SDL_BUTTON_LEFT)
-            {
-                int mx, my;
-                SDL_GetMouseState (&mx, &my);
-                if (mx >= flagBtn.x and mx <= flagBtn.x + flagBtn.w and
-                    my >= flagBtn.y and my <= flagBtn.y + flagBtn.h)
-                {
-                    programRunning = true;
-                    resetTimer (timerStart);
-                }
-            }
-
-        if (programRunning)
-        {
-            if (!events.empty ())
-                startDrag (spritesDisplayQueue [0], events [0], drag0, offx0, offy0);
-
-            if (touchingEdge (spritesDisplayQueue [0]))
-                spritesDisplayQueue [0].direction = -spritesDisplayQueue [0].direction;
-
-            if (touchingSprite (spritesDisplayQueue [0], spritesDisplayQueue [1]))
-                varMgr.changeVar ("score", 1);
-
-            if (keyPressed (SDLK_RIGHT))
-                moveSteps (spritesDisplayQueue [0], 3);
-            if (keyPressed (SDLK_LEFT))
-            {
-                turnLeft (spritesDisplayQueue [0], 5);
-                moveSteps (spritesDisplayQueue [0], 3);
-            }
-
-            varMgr.drawAll (m_renderer, font2);
-
-            if (font2)
-            {
-                string timerTxt = "timer: " + to_string ((int)timerValue (timerStart)) + "s";
-                SDL_Color tc = {0, 100, 200};
-                SDL_Surface *ts = TTF_RenderText_Blended (font2, timerTxt.c_str (), tc);
-                SDL_Texture *tt = SDL_CreateTextureFromSurface (m_renderer, ts);
-                SDL_Rect bg = {873, 308, ts -> w + 4, ts -> h + 4};
-                SDL_SetRenderDrawColor (m_renderer, 200, 200, 200, 255);
-                SDL_RenderFillRect (m_renderer, &bg);
-                SDL_Rect tr = {875, 310, ts -> w, ts -> h};
-                SDL_RenderCopy (m_renderer, tt, nullptr, &tr);
-                SDL_DestroyTexture (tt);
-                SDL_FreeSurface (ts);
-            }
-
-            if (font2 and !blockReg.blocks.empty ())
-            {
-                string blist = "Blocks: ";
-                for (int i = 0; i < (int)blockReg.blocks.size (); i++)
-                {
-                    blist += blockReg.blocks [i].name;
-                    if (i < (int)blockReg.blocks.size () - 1) blist += ", ";
-                }
-                SDL_Color bc = {150, 0, 200};
-                SDL_Surface *bs = TTF_RenderText_Blended (font2, blist.c_str (), bc);
-                SDL_Texture *bt = SDL_CreateTextureFromSurface (m_renderer, bs);
-                SDL_Rect bbg = {873, 338, bs -> w + 4, bs -> h + 4};
-                SDL_SetRenderDrawColor (m_renderer, 200, 200, 200, 255);
-                SDL_RenderFillRect (m_renderer, &bbg);
-                SDL_Rect br = {875, 340, bs -> w, bs -> h};
-                SDL_RenderCopy (m_renderer, bt, nullptr, &br);
-                SDL_DestroyTexture (bt);
-                SDL_FreeSurface (bs);
-            }
-        }
-
-        for (auto &j : spritesDisplayQueue) j.draw (m_renderer);
-        dbg.drawAll (m_renderer);
-        SDL_RenderPresent (m_renderer);
+        SDL_SetRenderDrawColor (ren, 255, 255, 255, 255);
+        SDL_RenderClear (ren);
+        setupScreen (ren, font, stage);
+        SDL_RenderCopy (ren, penLayer, nullptr, nullptr);
+        engine.render (ren, font2);
+        drawFlag (ren, font2);
+        drawStop (ren, font2);
+        varMgr.drawAll (ren, font2);
+        setupCostumeMenuScreen(ren, costumeMenuScreen, ev, stage, font, sprites[0]);
+        for (auto &sp : sprites)
+            sp.draw (ren);
+        setupExtensionScreen(ren, extensionMenuScreen, ev, font, activatePenIcon);
+        SDL_RenderPresent (ren);
+        SDL_Delay (16);
     }
 
-    for (auto &j : sprites)
-        for (auto &i : j.costumes)
-            SDL_DestroyTexture (i);
-    SDL_DestroyWindow (m_window);
-    SDL_DestroyRenderer (m_renderer);
-    IMG_Quit ();
-    SDL_Quit ();
-    TTF_Quit ();
+    for (auto &sp : sprites)
+        for (auto &c : sp.costumes)
+            if (c) SDL_DestroyTexture (c);
 
+    SDL_DestroyTexture (penLayer);
+    SDL_DestroyRenderer (ren);
+    SDL_DestroyWindow (win);
+    if (font)  TTF_CloseFont (font);
+    if (font2) TTF_CloseFont (font2);
+    Mix_CloseAudio ();
+    IMG_Quit ();
+    TTF_Quit ();
+    SDL_Quit ();
     return 0;
 }
